@@ -121,9 +121,15 @@ public class MainActivity extends AppCompatActivity {
         editText = (EditText) findViewById(R.id.editTextNumber);
         String number = editText.getText().toString();
 
-        if (storageHandler.getSaveNumber()) {
-            storageHandler.saveNumbers(number);
-        }
+       /* if (storageHandler.getSaveNumber()) {*/
+
+            if(storageHandler.saveNumbers(number, "1", "2")){
+                Toast.makeText(this, "Success", Toast.LENGTH_LONG).show();
+            }
+            else{
+                Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
+            }
+        //}
 
         number = number.replace("#", Uri.encode("#"));
         Intent intent = new Intent(Intent.ACTION_CALL);

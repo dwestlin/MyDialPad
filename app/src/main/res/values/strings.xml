@@ -42,4 +42,5 @@
     <string name="voice_url">http://dt031g.programvaruteknik.nu/dialpad/sounds/</string>
     <string name="storage_location">com.example.dwest</string>
     <string name="storage_source">Source for new voices</string>
+    <string name="no_calls_are_stored">No calls are stored</string>
 </resources>

@@ -3,6 +3,8 @@ package com.example.dwest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.widget.Toast;
+
 import java.io.File;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,7 @@ public class ExternalStorageHandler
     private SharedPreferences sharedPrefs;
     private String soundsPath;
     private String state;
+    private DatabaseHelper helper;
 
 
     public ExternalStorageHandler(Context context)
@@ -23,6 +26,7 @@ public class ExternalStorageHandler
         sharedPrefs = context.getSharedPreferences("PrefsFile", 0);
         soundsPath  = Environment.getExternalStorageDirectory().getAbsolutePath() + "/dialpad/sounds/";
         state = Environment.getExternalStorageState();
+        helper = new DatabaseHelper(context);
     }
 
     public String getSoundsPath()
@@ -47,28 +51,12 @@ public class ExternalStorageHandler
 
 
 
-    public void saveNumbers(String number) throws JSONException
+    public boolean saveNumbers(String number, String date, String pos)
     {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        JSONArray numbers;
-
-        if(sharedPrefs.contains("numbers")){
-            numbers = new JSONArray(sharedPrefs.getString("numbers", ""));
-        }else{
-            numbers = new JSONArray();
-        }
-
-        try
-        {
-            numbers.put(number);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        editor.putString("numbers", numbers.toString());
-        editor.commit();
+      if(helper.insertCall(number, date, pos)){
+          return true;
+      }
+      return false;
     }
 
     public void setSaveNumber(boolean checked){
