@@ -17,6 +17,13 @@ import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
 import org.json.JSONException;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,11 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
                 {
                     Toast.makeText(this, R.string.call_granted, Toast.LENGTH_SHORT).show();
-                    try {
-                        callFunction();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    callFunction();
                 }
                 else
                 {
@@ -117,13 +120,20 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void callFunction() throws SecurityException, JSONException {
+    private void callFunction()  {
         editText = (EditText) findViewById(R.id.editTextNumber);
         String number = editText.getText().toString();
 
-       /* if (storageHandler.getSaveNumber()) {*/
+        DateFormat df = new SimpleDateFormat("dd-MMMM HH:mm a");
+        Date date = new Date(System.currentTimeMillis());
+        String dateString = df.format(date);
 
-            if(storageHandler.saveNumbers(number, "1", "2")){
+
+
+
+        /* if (storageHandler.getSaveNumber()) {*/
+
+            if(storageHandler.saveNumbers(number, dateString, "2")){
                 Toast.makeText(this, "Success", Toast.LENGTH_LONG).show();
             }
             else{

@@ -7,6 +7,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.util.ArrayList;
+
 public class DatabaseHelper extends SQLiteOpenHelper{
 
     private static final int DATABASE_VERSION = 1;
@@ -29,19 +31,17 @@ public class DatabaseHelper extends SQLiteOpenHelper{
         this.db = db;
     }
 
-    public boolean insertCall(String number, String date, String position){
+    public boolean insertCall(CallData cd){
         db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
 
-        values.put(COLUMN_NUM, number);
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ number + " to " + TABLE_NAME);
-        values.put(COLUMN_DATE, date);
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ date + " to " + TABLE_NAME);
-        values.put(COLUMN_POS, position);
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ position + " to " + TABLE_NAME);
-
-
+        values.put(COLUMN_NUM, cd.getNumber());
+        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getNumber() + " to " + TABLE_NAME);
+        values.put(COLUMN_DATE, cd.getDate());
+        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getDate() + " to " + TABLE_NAME);
+        values.put(COLUMN_POS, cd.getPosition());
+        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getPosition() + " to " + TABLE_NAME);
 
         long results = db.insert(TABLE_NAME, null, values);
         db.close();

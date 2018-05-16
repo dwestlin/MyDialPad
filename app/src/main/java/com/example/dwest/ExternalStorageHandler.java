@@ -53,7 +53,13 @@ public class ExternalStorageHandler
 
     public boolean saveNumbers(String number, String date, String pos)
     {
-      if(helper.insertCall(number, date, pos)){
+        CallData cd = new CallData();
+
+        cd.setNumber(number);
+        cd.setDate(date);
+        cd.setPosition(pos);
+
+      if(helper.insertCall(cd)){
           return true;
       }
       return false;

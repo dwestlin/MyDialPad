@@ -25,7 +25,7 @@ public class CallList extends AppCompatActivity
     private static final String TAG = "CallList";
     DatabaseHelper db;
 
-    private ListView mListView;
+    ListView mListView;
 
 
     @Override
@@ -36,6 +36,8 @@ public class CallList extends AppCompatActivity
         mListView = (ListView) findViewById(R.id.listView);
         db = new DatabaseHelper(this);
 
+
+
         populateListView();
     }
 
@@ -44,14 +46,17 @@ public class CallList extends AppCompatActivity
 
         Cursor data = db.getData();
 
-        ArrayList<String> listData = new ArrayList<>();
-
+        ArrayList<CallData> listData = new ArrayList<>();
         while(data.moveToNext()){
-            listData.add(data.getString(0));
-            listData.add(data.getString(1));
+            listData.add(new CallData(data.getString(0), data.getString(1), data.getString(2)));
         }
 
-        ListAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_2, listData);
+        //listData.add(data.getString(data.getColumnIndex("num")));
+        //listData.add(data.getString(data.getColumnIndex("date")));
+        //listData.add(data.getString(data.getColumnIndex("position")));
+
+        //ListAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, listData);
+        CustomArrayAdapter adapter = new CustomArrayAdapter(this, listData);
         mListView.setAdapter(adapter);
 
     }
