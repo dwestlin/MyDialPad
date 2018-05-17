@@ -1,19 +1,18 @@
 package com.example.dwest;
 
-import android.content.SharedPreferences;
+
+import android.database.Cursor;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.method.ScrollingMovementMethod;
-import android.widget.TextView;
-import org.json.JSONArray;
-import org.json.JSONException;
+import android.widget.ListView;
+import java.util.ArrayList;
 
 
 public class CallList extends AppCompatActivity
 {
-    private SharedPreferences sharedPrefs;
+    DatabaseHelper db;
 
-    private TextView call_list;
+    ListView mListView;
 
 
     @Override
@@ -21,57 +20,23 @@ public class CallList extends AppCompatActivity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call_list);
+        mListView = (ListView) findViewById(R.id.listView);
+        mListView.setEmptyView(findViewById(R.id.empty));
+        db = new DatabaseHelper(this);
 
-        init();
+        fillListView();
     }
 
+    private void fillListView() {
+        Cursor data = db.getData();
 
-    private void init()
-    {
-        sharedPrefs = this.getSharedPreferences("PrefsFile", 0);
-        call_list = (TextView) findViewById(R.id.call_list);
-
-        call_list.setMovementMethod(new ScrollingMovementMethod());
-
-        try
-        {
-            printNumbers();
+        ArrayList<CallData> listData = new ArrayList<>();
+        while(data.moveToNext()){
+            listData.add(new CallData(data.getString(0), data.getString(1), data.getString(2), data.getString(3)));
         }
-        catch (JSONException e)
-        {
-            e.printStackTrace();
-        }
+
+        CustomArrayAdapter adapter = new CustomArrayAdapter(this, listData);
+        mListView.setAdapter(adapter);
     }
 
-    private void printNumbers() throws JSONException
-    {
-        JSONArray numbers;
-
-        if(sharedPrefs.contains("numbers"))
-        {
-            numbers = new JSONArray(sharedPrefs.getString("numbers", ""));
-        }
-        else
-        {
-            numbers = new JSONArray();
-        }
-
-        int numberSize = numbers.length();
-
-        if(numberSize > 0){
-
-            for(int i = 0; i < numberSize; i++)
-            {
-                if(!call_list.getText().toString().equals(""))
-                {
-                    call_list.append("\n");
-                    call_list.append(numbers.get(i).toString());
-                }
-                else
-                {
-                    call_list.append(numbers.get(i).toString());
-                }
-            }
-        }
-    }
 }

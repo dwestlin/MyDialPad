@@ -1,10 +1,16 @@
 package com.example.dwest;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.content.Context;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,15 +21,28 @@ import android.support.annotation.NonNull;
 import android.content.pm.PackageManager;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
+
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+
 import org.json.JSONException;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
 
 
 public class MainActivity extends AppCompatActivity {
 
     private ExternalStorageHandler storageHandler;
+    private LocationManager locationManager;
     private String voiceUrl, storageLocation;
     private EditText editText;
-    private String URL;
+    private String URL,lattitude, longitude;
     private String state = Environment.getExternalStorageState();
 
 
@@ -32,30 +51,31 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_CALL_PHONE = 2;
     private static final int PERMISSIONS_READ_EXTERNAL_STORAGE = 1;
+    private static final int PERMISSION_GET_LOCATION = 3;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         storageHandler = new ExternalStorageHandler(this);
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        if(!hasReadPermission()){
+        if (!hasReadPermission()) {
             requestReadPermission();
-        }
-        else{
+        } else {
             initContent();
         }
     }
+
 
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case PERMISSIONS_READ_EXTERNAL_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if(Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)|| Environment.MEDIA_MOUNTED.equals(state)){
+                    if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) || Environment.MEDIA_MOUNTED.equals(state)) {
                         Toast.makeText(this, getString(R.string.storage_granted), Toast.LENGTH_LONG).show();
-                    }
-                    else{
+                    } else {
                         Toast.makeText(this, getString(R.string.storage_external_unavailable), Toast.LENGTH_LONG).show();
                     }
                 } else {
@@ -63,23 +83,20 @@ public class MainActivity extends AppCompatActivity {
                 }
                 initContent();
                 break;
-            case PERMISSIONS_CALL_PHONE:
-            {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                {
+            case PERMISSIONS_CALL_PHONE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, R.string.call_granted, Toast.LENGTH_SHORT).show();
-                    try {
-                        callFunction();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                }
-                else
-                {
+                    callFunction();
+                } else {
                     Toast.makeText(this, R.string.call_not_granted, Toast.LENGTH_SHORT).show();
                 }
 
                 break;
+            }
+            case PERMISSION_GET_LOCATION:{
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    callFunction();
+                }
             }
 
         }
@@ -96,35 +113,64 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(final View v) {
             switch (v.getId()) {
                 case R.id.callBtn:
-                    try {
-                        checkCallPermission();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    checkCallPermission();
                     break;
             }
         }
     };
 
-    private void checkCallPermission() throws JSONException {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
-        {
+    private void checkCallPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             callFunction();
-        }
-        else
-        {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, PERMISSIONS_CALL_PHONE);
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_CALL_PHONE);
         }
     }
 
-    private void callFunction() throws SecurityException, JSONException {
-        editText = (EditText) findViewById(R.id.editTextNumber);
-        String number = editText.getText().toString();
+    private String formatDate(){
+        DateFormat df = new SimpleDateFormat("dd-MMMM HH:mm:ss a");
+        Date date = new Date(System.currentTimeMillis());
+        return df.format(date);
+    }
 
-        if (storageHandler.getSaveNumber()) {
-            storageHandler.saveNumbers(number);
+
+    private void callFunction()throws SecurityException{
+        editText = (EditText) findViewById(R.id.editTextNumber);
+
+        String number = editText.getText().toString();
+        String dateString = formatDate();
+
+        if (storageHandler.getSaveNumber()){
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission
+                    (MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_GET_LOCATION);
+
+            }
+            else{
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                if(location !=null){
+                    double lati = location.getLatitude();
+                    double longi = location.getLongitude();
+                    lattitude = String.valueOf(lati);
+                    longitude = String.valueOf(longi);
+
+                    storageHandler.saveNumbers(number, dateString, lattitude,longitude);
+                }else{
+                    storageHandler.saveNumbers(number, dateString, "???","???");
+                }
+
+
+
+            }
         }
 
+        placeCall(number);
+    }
+
+    private void placeCall(String number)throws SecurityException {
         number = number.replace("#", Uri.encode("#"));
         Intent intent = new Intent(Intent.ACTION_CALL);
         intent.setData(Uri.parse("tel:" + number));
@@ -192,6 +238,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.download_sounds:
                 checkStoragePermission();
                 return true;
+            case R.id.googleMap:
+                i = new Intent(this, MapsActivity.class);
+                startActivity(i);
         }
         return super.onOptionsItemSelected(item);
     }

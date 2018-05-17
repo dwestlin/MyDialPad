@@ -3,6 +3,8 @@ package com.example.dwest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.widget.Toast;
+
 import java.io.File;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +17,7 @@ public class ExternalStorageHandler
     private SharedPreferences sharedPrefs;
     private String soundsPath;
     private String state;
+    private DatabaseHelper helper;
 
 
     public ExternalStorageHandler(Context context)
@@ -23,6 +26,7 @@ public class ExternalStorageHandler
         sharedPrefs = context.getSharedPreferences("PrefsFile", 0);
         soundsPath  = Environment.getExternalStorageDirectory().getAbsolutePath() + "/dialpad/sounds/";
         state = Environment.getExternalStorageState();
+        helper = new DatabaseHelper(context);
     }
 
     public String getSoundsPath()
@@ -41,34 +45,22 @@ public class ExternalStorageHandler
 
     public String getSelectedVoice()
     {
-        String selectedVoice = sharedPrefs.getString("voiceFile", "");
-        return selectedVoice;
+        return sharedPrefs.getString("voiceFile", "");
     }
 
 
 
-    public void saveNumbers(String number) throws JSONException
+    public void saveNumbers(String number, String date, String latitude, String longitude)
     {
-        SharedPreferences.Editor editor = sharedPrefs.edit();
-        JSONArray numbers;
+        CallData cd = new CallData();
 
-        if(sharedPrefs.contains("numbers")){
-            numbers = new JSONArray(sharedPrefs.getString("numbers", ""));
-        }else{
-            numbers = new JSONArray();
-        }
+        cd.setNumber(number);
+        cd.setDate(date);
+        cd.setLatitude(latitude);
+        cd.setLongitude(longitude);
 
-        try
-        {
-            numbers.put(number);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        helper.insertCall(cd);
 
-        editor.putString("numbers", numbers.toString());
-        editor.commit();
     }
 
     public void setSaveNumber(boolean checked){
@@ -87,14 +79,8 @@ public class ExternalStorageHandler
     {
         File dir = new File(location);
 
-        if(dir.isDirectory())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        if(dir.isDirectory()) return true;
+        else return false;
     }
 
     public void createDir(String location)
