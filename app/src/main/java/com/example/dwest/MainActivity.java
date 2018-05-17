@@ -1,5 +1,9 @@
 package com.example.dwest;
 
+import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +19,11 @@ import android.support.annotation.NonNull;
 import android.content.pm.PackageManager;
 import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
+
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+
 import org.json.JSONException;
 
 import java.text.DateFormat;
@@ -32,6 +41,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText editText;
     private String URL;
     private String state = Environment.getExternalStorageState();
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+
 
 
     public static final String STORAGE = "com.example.dwest";
@@ -39,6 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int PERMISSIONS_CALL_PHONE = 2;
     private static final int PERMISSIONS_READ_EXTERNAL_STORAGE = 1;
+    private static final int PERMISSION_GET_LOCATION = 3;
 
 
     @Override
@@ -46,23 +59,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         storageHandler = new ExternalStorageHandler(this);
 
-        if(!hasReadPermission()){
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+
+        if (!hasReadPermission()) {
             requestReadPermission();
-        }
-        else{
+        } else {
             initContent();
         }
     }
+
 
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case PERMISSIONS_READ_EXTERNAL_STORAGE:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    if(Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)|| Environment.MEDIA_MOUNTED.equals(state)){
+                    if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(state) || Environment.MEDIA_MOUNTED.equals(state)) {
                         Toast.makeText(this, getString(R.string.storage_granted), Toast.LENGTH_LONG).show();
-                    }
-                    else{
+                    } else {
                         Toast.makeText(this, getString(R.string.storage_external_unavailable), Toast.LENGTH_LONG).show();
                     }
                 } else {
@@ -70,19 +85,20 @@ public class MainActivity extends AppCompatActivity {
                 }
                 initContent();
                 break;
-            case PERMISSIONS_CALL_PHONE:
-            {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
-                {
+            case PERMISSIONS_CALL_PHONE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Toast.makeText(this, R.string.call_granted, Toast.LENGTH_SHORT).show();
                     callFunction();
-                }
-                else
-                {
+                } else {
                     Toast.makeText(this, R.string.call_not_granted, Toast.LENGTH_SHORT).show();
                 }
 
                 break;
+            }
+            case PERMISSION_GET_LOCATION:{
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    callFunction();
+                }
             }
 
         }
@@ -99,46 +115,56 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(final View v) {
             switch (v.getId()) {
                 case R.id.callBtn:
-                    try {
-                        checkCallPermission();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
+                    checkCallPermission();
                     break;
             }
         }
     };
 
-    private void checkCallPermission() throws JSONException {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
-        {
+    private void checkCallPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             callFunction();
-        }
-        else
-        {
+        } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, PERMISSIONS_CALL_PHONE);
         }
     }
 
-    private void callFunction()  {
-        editText = (EditText) findViewById(R.id.editTextNumber);
-        String number = editText.getText().toString();
+    private String formatDate(){
 
         DateFormat df = new SimpleDateFormat("dd-MMMM HH:mm a");
         Date date = new Date(System.currentTimeMillis());
-        String dateString = df.format(date);
+        return df.format(date);
+
+    }
 
 
+    private void callFunction() throws SecurityException{
+        editText = (EditText) findViewById(R.id.editTextNumber);
+        String number = editText.getText().toString();
 
+        String dateString = formatDate();
+        String loc;
+
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }else{
+            Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+            if(location != null){
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+                loc = ""+latitude+ " "+longitude;
+                storageHandler.saveNumbers(number, dateString, loc);
+            }
+            else{
+                storageHandler.saveNumbers(number, dateString, "???");
+            }
+        }
 
         /* if (storageHandler.getSaveNumber()) {*/
 
-            if(storageHandler.saveNumbers(number, dateString, "2")){
-                Toast.makeText(this, "Success", Toast.LENGTH_LONG).show();
-            }
-            else{
-                Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show();
-            }
+
+
         //}
 
         number = number.replace("#", Uri.encode("#"));
@@ -208,6 +234,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.download_sounds:
                 checkStoragePermission();
                 return true;
+            case R.id.googleMap:
+                i = new Intent(this, MapsActivity.class);
+                startActivity(i);
         }
         return super.onOptionsItemSelected(item);
     }
