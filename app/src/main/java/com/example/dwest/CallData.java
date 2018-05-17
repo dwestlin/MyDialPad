@@ -1,18 +1,19 @@
 package com.example.dwest;
 
 public class CallData {
-    public String number;
-    public String date;
-    public String position;
+    private String number;
+    private String date;
+    private String latitude,longitude;
 
     public CallData(){
 
     }
 
-    public CallData(String number, String date, String pos){
+    public CallData(String number, String date, String latitude, String longitude){
         this.number = number;
         this.date = date;
-        this.position = pos;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public String getNumber() {
@@ -31,12 +32,16 @@ public class CallData {
         this.date = date;
     }
 
-    public String getPosition() {
-        return position;
+    public String getLatitude() {
+        return latitude;
     }
 
-    public void setPosition(String pos) {
-        this.position = pos;
+    public void setLatitude(String pos) {
+        this.latitude = pos;
     }
+
+    public void setLongitude(String pos){this.longitude = pos;}
+
+    public String getLongitude(){return longitude;}
 
 }

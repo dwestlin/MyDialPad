@@ -2,6 +2,7 @@ package com.example.dwest;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.Context;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Environment;
@@ -9,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.Manifest;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -37,13 +39,11 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private ExternalStorageHandler storageHandler;
+    private LocationManager locationManager;
     private String voiceUrl, storageLocation;
     private EditText editText;
-    private String URL;
+    private String URL,lattitude, longitude;
     private String state = Environment.getExternalStorageState();
-    private LocationManager locationManager;
-    private LocationListener locationListener;
-
 
 
     public static final String STORAGE = "com.example.dwest";
@@ -58,9 +58,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         storageHandler = new ExternalStorageHandler(this);
-
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
 
         if (!hasReadPermission()) {
             requestReadPermission();
@@ -125,48 +123,54 @@ public class MainActivity extends AppCompatActivity {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             callFunction();
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE}, PERMISSIONS_CALL_PHONE);
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CALL_PHONE, Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSIONS_CALL_PHONE);
         }
     }
 
     private String formatDate(){
-
-        DateFormat df = new SimpleDateFormat("dd-MMMM HH:mm a");
+        DateFormat df = new SimpleDateFormat("dd-MMMM HH:mm:ss a");
         Date date = new Date(System.currentTimeMillis());
         return df.format(date);
-
     }
 
 
-    private void callFunction() throws SecurityException{
+    private void callFunction()throws SecurityException{
         editText = (EditText) findViewById(R.id.editTextNumber);
+
         String number = editText.getText().toString();
-
         String dateString = formatDate();
-        String loc;
 
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-        }else{
-            Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (storageHandler.getSaveNumber()){
+            if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission
+                    (MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
 
-            if(location != null){
-                double latitude = location.getLatitude();
-                double longitude = location.getLongitude();
-                loc = ""+latitude+ " "+longitude;
-                storageHandler.saveNumbers(number, dateString, loc);
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_GET_LOCATION);
+
             }
             else{
-                storageHandler.saveNumbers(number, dateString, "???");
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                if(location !=null){
+                    double lati = location.getLatitude();
+                    double longi = location.getLongitude();
+                    lattitude = String.valueOf(lati);
+                    longitude = String.valueOf(longi);
+
+                    storageHandler.saveNumbers(number, dateString, lattitude,longitude);
+                }else{
+                    storageHandler.saveNumbers(number, dateString, "???","???");
+                }
+
+
+
             }
         }
 
-        /* if (storageHandler.getSaveNumber()) {*/
+        placeCall(number);
+    }
 
-
-
-        //}
-
+    private void placeCall(String number)throws SecurityException {
         number = number.replace("#", Uri.encode("#"));
         Intent intent = new Intent(Intent.ACTION_CALL);
         intent.setData(Uri.parse("tel:" + number));

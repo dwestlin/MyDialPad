@@ -8,6 +8,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
@@ -23,7 +24,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -32,29 +33,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
         Cursor data = db.getData();
 
+
         while(data.moveToNext()){
-            LatLng marker = new LatLng( 	rand.nextInt(50)+1,  	rand.nextInt(20)+1);
-            mMap.addMarker(new MarkerOptions().position(marker).title(data.getString(0)));
+            if(!(data.getString(2).equals("???") || data.getString(3).equals("???"))){
+
+                double latitude = Double.parseDouble(data.getString(2));
+                double longitude = Double.parseDouble(data.getString(3));
+                LatLng marker = new LatLng( 	latitude,  	longitude);
+                mMap.addMarker(new MarkerOptions()
+                        .position(marker)
+                        .title(data.getString(0))
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_marker))
+                        .snippet(data.getString(1)));
+            }
         }
 
-        // Add a marker in Sydney and move the camera
         LatLng sweden = new LatLng( 	62.39081100,  	17.30692700);
-        mMap.addMarker(new MarkerOptions().position(sweden).title("Marker in Sweden"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(sweden));
     }
 

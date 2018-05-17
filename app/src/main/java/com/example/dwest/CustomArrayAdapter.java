@@ -9,10 +9,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-
-
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,11 +23,12 @@ public class CustomArrayAdapter extends ArrayAdapter<CallData> {
 
     @Override
     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+
         View listItem = convertView;
         if(listItem == null)
             listItem = LayoutInflater.from(getContext()).inflate(R.layout.custom_list_item,parent,false);
 
-       CallData cd = callData.get(position);
+        CallData cd = callData.get(position);
 
 
         TextView number = (TextView) listItem.findViewById(R.id.text1);
@@ -41,7 +38,7 @@ public class CustomArrayAdapter extends ArrayAdapter<CallData> {
         date.setText(cd.getDate());
 
         TextView GPSPos = (TextView) listItem.findViewById(R.id.text3);
-        GPSPos.setText(cd.getPosition());
+        GPSPos.setText(cd.getLatitude()+","+cd.getLongitude());
 
         return listItem;
     }

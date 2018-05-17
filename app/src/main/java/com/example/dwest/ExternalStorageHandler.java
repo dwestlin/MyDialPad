@@ -45,24 +45,22 @@ public class ExternalStorageHandler
 
     public String getSelectedVoice()
     {
-        String selectedVoice = sharedPrefs.getString("voiceFile", "");
-        return selectedVoice;
+        return sharedPrefs.getString("voiceFile", "");
     }
 
 
 
-    public boolean saveNumbers(String number, String date, String pos)
+    public void saveNumbers(String number, String date, String latitude, String longitude)
     {
         CallData cd = new CallData();
 
         cd.setNumber(number);
         cd.setDate(date);
-        cd.setPosition(pos);
+        cd.setLatitude(latitude);
+        cd.setLongitude(longitude);
 
-      if(helper.insertCall(cd)){
-          return true;
-      }
-      return false;
+        helper.insertCall(cd);
+
     }
 
     public void setSaveNumber(boolean checked){
@@ -81,14 +79,8 @@ public class ExternalStorageHandler
     {
         File dir = new File(location);
 
-        if(dir.isDirectory())
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
+        if(dir.isDirectory()) return true;
+        else return false;
     }
 
     public void createDir(String location)

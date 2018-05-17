@@ -16,9 +16,10 @@ public class DatabaseHelper extends SQLiteOpenHelper{
     private static final String TABLE_NAME = "calls";
     private static final String COLUMN_NUM = "num";
     private static final String COLUMN_DATE = "date";
-    private static final String COLUMN_POS = "position";
-    SQLiteDatabase db;
-    private static final String TABLE_CREATE = "CREATE TABLE calls (num integer not null, date text not null, position text not null);";
+    private static final String COLUMN_LAT = "latitude";
+    private static final String COLUMN_LONG = "longitude";
+    private SQLiteDatabase db;
+    private static final String TABLE_CREATE = "CREATE TABLE calls (num integer not null, date text not null, latitude text not null, longitude text not null);";
 
     public DatabaseHelper(Context context){
         super(context, DATABASE_NAME,null,DATABASE_VERSION);
@@ -31,25 +32,18 @@ public class DatabaseHelper extends SQLiteOpenHelper{
         this.db = db;
     }
 
-    public boolean insertCall(CallData cd){
+    public void insertCall(CallData cd){
         db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();
 
         values.put(COLUMN_NUM, cd.getNumber());
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getNumber() + " to " + TABLE_NAME);
         values.put(COLUMN_DATE, cd.getDate());
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getDate() + " to " + TABLE_NAME);
-        values.put(COLUMN_POS, cd.getPosition());
-        Log.d("DatabaseHelper ", "insertCall: Adding "+ cd.getPosition() + " to " + TABLE_NAME);
+        values.put(COLUMN_LAT, cd.getLatitude());
+        values.put(COLUMN_LONG, cd.getLongitude());
 
-        long results = db.insert(TABLE_NAME, null, values);
+        db.insert(TABLE_NAME, null, values);
         db.close();
-
-        if(results == -1){
-            return false;
-        }else
-            return true;
     }
 
 
@@ -67,6 +61,7 @@ public class DatabaseHelper extends SQLiteOpenHelper{
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
         String query = "DROP TABLE IF EXISTS "+TABLE_NAME;
         db.execSQL(query);
+        db.close();
         this.onCreate(db);
     }
 }
